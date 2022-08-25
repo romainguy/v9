@@ -1,0 +1,72 @@
+import org.jetbrains.dokka.gradle.DokkaMultiModuleTask
+
+buildscript {
+    ext {
+        compose_version = '1.3.0-alpha03'
+        compose_compiler_version = '1.3.0'
+        pathway_version = '0.6.0'
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.2.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
+        classpath "com.vanniktech:gradle-maven-publish-plugin:0.18.0"
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:1.6.0"
+    }
+}
+
+apply plugin: 'org.jetbrains.dokka'
+
+tasks.withType(DokkaMultiModuleTask).configureEach {
+    outputDirectory = rootProject.file('docs/api')
+    failOnWarning = true
+}
+
+afterEvaluate {
+    if (tasks.findByName('dokkaHtmlPartial') == null) {
+        // If dokka isn't enabled on this module, skip
+        return
+    }
+
+    tasks.named('dokkaHtmlPartial') {
+        dokkaSourceSets.configureEach {
+            reportUndocumented.set(true)
+            skipEmptyPackages.set(true)
+            skipDeprecated.set(true)
+            jdkVersion.set(8)
+
+            // Add Android SDK packages
+            noAndroidSdkLink.set(false)
+
+            // AndroidX + Compose docs
+            externalDocumentationLink {
+                url.set(new URL("https://developer.android.com/reference/"))
+                packageListUrl.set(new URL("https://developer.android.com/reference/androidx/package-list"))
+            }
+            externalDocumentationLink {
+                url.set(new URL("https://developer.android.com/reference/kotlin/"))
+                packageListUrl.set(new URL("https://developer.android.com/reference/kotlin/androidx/package-list"))
+            }
+
+            sourceLink {
+                localDirectory.set(project.file("src/main/java"))
+                // URL showing where the source code can be accessed through the web browser
+                remoteUrl.set(new URL("https://github.com/romainguy/v9/blob/main/${project.name}/src/main/java"))
+                // Suffix which is used to append the line number to the URL. Use #L for GitHub
+                remoteLineSuffix.set("#L")
+            }
+        }
+    }
+}
+
+allprojects {
+    plugins.withId("com.vanniktech.maven.publish") {
+        mavenPublish {
+            sonatypeHost = "S01"
+        }
+    }
+}
