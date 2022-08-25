@@ -81,12 +81,12 @@ class Slices(verticalSlices: List<Slice>, horizontalSlices: List<Slice>) {
         "Slices(verticalSlices=$verticalSlices, horizontalSlices=$horizontalSlices)"
 }
 
-fun Path.slice(slices: Slices) = ResizablePath(this, slices)
+fun Path.slice(slices: Slices) = PathResizer(this, slices)
 
-class ResizablePath(val path: Path, val slices: Slices) {
+class PathResizer(val path: Path, val slices: Slices) {
     val bounds: RectF = RectF()
 
-    private val segments: MutableList<PathSegment>
+    private val segments: List<PathSegment>
 
     private var stretchableWidth = 0.0f
     private var stretchableHeight = 0.0f
@@ -94,16 +94,15 @@ class ResizablePath(val path: Path, val slices: Slices) {
     init {
         path.computeBounds(bounds, true)
 
-        // TODO: compute intersections and split curves
-        // TODO: skip vertical/horizontal line intersections
-
         val iterator = path.iterator()
-        segments = ArrayList(iterator.rawSize())
+        val filteredSegments = ArrayList<PathSegment>(iterator.rawSize())
 
         // TODO: optimize using a large array and next(FloatArray, Int)
         while (iterator.hasNext()) {
-            iterator.next().apply { if (type != PathSegment.Type.Done) segments.add(this) }
+            iterator.next().apply { if (type != PathSegment.Type.Done) filteredSegments.add(this) }
         }
+
+        segments = filteredSegments
 
         for (slice in slices.verticalSlices) stretchableWidth += slice.size
         for (slice in slices.horizontalSlices) stretchableHeight += slice.size
@@ -125,40 +124,38 @@ class ResizablePath(val path: Path, val slices: Slices) {
 
         dstPath.rewind()
 
-        val srcWidth = bounds.width()
-        val deltaWidth = width - srcWidth
-
-        val srcHeight = bounds.height()
-        val deltaHeight = height - srcHeight
+        val stretchX = (width - bounds.width()) / stretchableWidth
+        val stretchY = (height - bounds.height()) / stretchableHeight
 
         // TODO: optimize!
+        // TODO: only offset control points when end point moves
         for (segment in segments) {
             val points = segment.points
             when (segment.type) {
                 PathSegment.Type.Move -> dstPath.moveTo(
-                    offset(points[0].x, slices.verticalSlices, stretchableWidth, deltaWidth),
-                    offset(points[0].y, slices.horizontalSlices, stretchableHeight, deltaHeight)
+                    offset(points[0].x, slices.verticalSlices, stretchX),
+                    offset(points[0].y, slices.horizontalSlices, stretchY)
                 )
                 PathSegment.Type.Line -> dstPath.lineTo(
-                    offset(points[1].x, slices.verticalSlices, stretchableWidth, deltaWidth),
-                    offset(points[1].y, slices.horizontalSlices, stretchableHeight, deltaHeight)
+                    offset(points[1].x, slices.verticalSlices, stretchX),
+                    offset(points[1].y, slices.horizontalSlices, stretchY)
                 )
                 PathSegment.Type.Quadratic -> dstPath.quadTo(
-                    offset(points[1].x, slices.verticalSlices, stretchableWidth, deltaWidth),
-                    offset(points[1].y, slices.horizontalSlices, stretchableHeight, deltaHeight),
-                    offset(points[2].x, slices.verticalSlices, stretchableWidth, deltaWidth),
-                    offset(points[2].y, slices.horizontalSlices, stretchableHeight, deltaHeight)
+                    offset(points[1].x, slices.verticalSlices, stretchX),
+                    offset(points[1].y, slices.horizontalSlices, stretchY),
+                    offset(points[2].x, slices.verticalSlices, stretchX),
+                    offset(points[2].y, slices.horizontalSlices, stretchY)
                 )
                 PathSegment.Type.Conic -> {
                     // Cannot happen since we convert conics to quadratics
                 }
                 PathSegment.Type.Cubic -> dstPath.cubicTo(
-                    offset(points[1].x, slices.verticalSlices, stretchableWidth, deltaWidth),
-                    offset(points[1].y, slices.horizontalSlices, stretchableHeight, deltaHeight),
-                    offset(points[2].x, slices.verticalSlices, stretchableWidth, deltaWidth),
-                    offset(points[2].y, slices.horizontalSlices, stretchableHeight, deltaHeight),
-                    offset(points[3].x, slices.verticalSlices, stretchableWidth, deltaWidth),
-                    offset(points[3].y, slices.horizontalSlices, stretchableHeight, deltaHeight)
+                    offset(points[1].x, slices.verticalSlices, stretchX),
+                    offset(points[1].y, slices.horizontalSlices, stretchY),
+                    offset(points[2].x, slices.verticalSlices, stretchX),
+                    offset(points[2].y, slices.horizontalSlices, stretchY),
+                    offset(points[3].x, slices.verticalSlices, stretchX),
+                    offset(points[3].y, slices.horizontalSlices, stretchY)
                 )
                 PathSegment.Type.Close -> dstPath.close()
                 else -> { }
@@ -169,11 +166,11 @@ class ResizablePath(val path: Path, val slices: Slices) {
     }
 
     // TODO: optimize with summed table
-    private fun offset(position: Float, slices: List<Slice>, dimension: Float, stretch: Float): Float {
+    private fun offset(position: Float, slices: List<Slice>, stretch: Float): Float {
         var offsetPosition = position
         for (slice in slices) {
             if (position > slice.start) {
-                var offset = (slice.size / dimension) * stretch
+                var offset = slice.size * stretch
                 if (position <= slice.end) {
                     offset *= (position - slice.start) / slice.size
                 }

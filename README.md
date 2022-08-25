@@ -1,12 +1,13 @@
-# V9
+# v9
 
 [![v9](https://maven-badges.herokuapp.com/maven-central/dev.romainguy/v9/badge.svg?subject=v9)](https://maven-badges.herokuapp.com/maven-central/dev.romainguy/v9)
 [![Android build status](https://github.com/romainguy/v9/workflows/Android/badge.svg)](https://github.com/romainguy/v9/actions?query=workflow%3AAndroid)
 
-Pathway is an Android library that provides new functionalities around the graphics
-[Path](https://developer.android.com/reference/android/graphics/Path) API.
+v9 is an Android library that provides the ability to dynamically resize
+[Path](https://developer.android.com/reference/android/graphics/Path) objects as you would
+[9-patch bitmaps](https://developer.android.com/studio/write/draw9patch).
 
-Pathway is compatible with API 21+.
+v9 is compatible with API 21+.
 
 ## Maven
 
