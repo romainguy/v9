@@ -17,6 +17,7 @@
 package dev.romainguy.graphics.v9
 
 import android.graphics.Path
+import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import dev.romainguy.graphics.path.PathSegment
@@ -59,10 +60,10 @@ fun Slices(left: Float, top: Float, right: Float, bottom: Float) = Slices(
 )
 
 class Slices(verticalSlices: List<Slice>, horizontalSlices: List<Slice>) {
-    val verticalSlices: List<Slice>
+    val verticalSlices: Array<Slice>
     private val verticalTotal: Float
 
-    val horizontalSlices: List<Slice>
+    val horizontalSlices: Array<Slice>
     private val horizontalTotal: Float
 
     init {
@@ -70,15 +71,24 @@ class Slices(verticalSlices: List<Slice>, horizontalSlices: List<Slice>) {
         require(horizontalSlices.isNotEmpty()) { "At least 1 horizontal slice is required" }
 
         // TODO: merge overlapping/connected slices
-        this.verticalSlices = verticalSlices.filter { it.size > 0 }.sortedBy { it.start }
+        this.verticalSlices = verticalSlices
+            .filter { it.size > 0 }
+            .sortedBy { it.start }
+            .toTypedArray()
         this.verticalTotal = this.verticalSlices.sumOf { it.size.toDouble() }.toFloat()
 
-        this.horizontalSlices = horizontalSlices.filter { it.size > 0 }.sortedBy { it.start }
+        this.horizontalSlices = horizontalSlices
+            .filter { it.size > 0 }
+            .sortedBy { it.start }
+            .toTypedArray()
         this.horizontalTotal = this.horizontalSlices.sumOf { it.size.toDouble() }.toFloat()
     }
 
-    override fun toString(): String =
-        "Slices(verticalSlices=$verticalSlices, horizontalSlices=$horizontalSlices)"
+    override fun toString(): String {
+        return "Slices(" +
+                "verticalSlices=${verticalSlices.contentToString()}, " +
+                "horizontalSlices=${horizontalSlices.contentToString()})"
+    }
 }
 
 fun Path.slice(slices: Slices) = PathResizer(this, slices)
@@ -86,7 +96,10 @@ fun Path.slice(slices: Slices) = PathResizer(this, slices)
 class PathResizer(val path: Path, val slices: Slices) {
     val bounds: RectF = RectF()
 
-    private val segments: List<PathSegment>
+    private val segments: ArrayList<PathSegment>
+
+    // We only need 3 points but it makes an algorithm easier later
+    private val points = Array(4) { PointF(0.0f, 0.0f) }
 
     private var stretchableWidth = 0.0f
     private var stretchableHeight = 0.0f
@@ -95,14 +108,14 @@ class PathResizer(val path: Path, val slices: Slices) {
         path.computeBounds(bounds, true)
 
         val iterator = path.iterator()
-        val filteredSegments = ArrayList<PathSegment>(iterator.rawSize())
 
+        segments = ArrayList(iterator.rawSize())
         // TODO: optimize using a large array and next(FloatArray, Int)
-        while (iterator.hasNext()) {
-            iterator.next().apply { if (type != PathSegment.Type.Done) filteredSegments.add(this) }
+        //       even if we waste 8 floats per segment, we should get better locality
+        //       compared to PathSegment instances with arrays of PointF
+        for (segment in iterator) {
+            if (segment.type != PathSegment.Type.Done) segments.add(segment)
         }
-
-        segments = filteredSegments
 
         for (slice in slices.verticalSlices) stretchableWidth += slice.size
         for (slice in slices.horizontalSlices) stretchableHeight += slice.size
@@ -127,36 +140,36 @@ class PathResizer(val path: Path, val slices: Slices) {
         val stretchX = (width - bounds.width()) / stretchableWidth
         val stretchY = (height - bounds.height()) / stretchableHeight
 
-        // TODO: optimize!
-        // TODO: only offset control points when end point moves
-        for (segment in segments) {
-            val points = segment.points
+        for (i in 0 until segments.size) {
+            val segment = segments[i]
+            val offsetPositions = points
             when (segment.type) {
-                PathSegment.Type.Move -> dstPath.moveTo(
-                    offset(points[0].x, slices.verticalSlices, stretchX),
-                    offset(points[0].y, slices.horizontalSlices, stretchY)
-                )
-                PathSegment.Type.Line -> dstPath.lineTo(
-                    offset(points[1].x, slices.verticalSlices, stretchX),
-                    offset(points[1].y, slices.horizontalSlices, stretchY)
-                )
-                PathSegment.Type.Quadratic -> dstPath.quadTo(
-                    offset(points[1].x, slices.verticalSlices, stretchX),
-                    offset(points[1].y, slices.horizontalSlices, stretchY),
-                    offset(points[2].x, slices.verticalSlices, stretchX),
-                    offset(points[2].y, slices.horizontalSlices, stretchY)
-                )
+                PathSegment.Type.Move -> {
+                    offset(segment.points, 0, 0, offsetPositions, slices, stretchX, stretchY)
+                    dstPath.moveTo(offsetPositions[0].x, offsetPositions[0].y)
+                }
+                PathSegment.Type.Line -> {
+                    offset(segment.points, 1, 1, offsetPositions, slices, stretchX, stretchY)
+                    dstPath.lineTo(offsetPositions[1].x, offsetPositions[1].y)
+                }
+                PathSegment.Type.Quadratic -> {
+                    offset(segment.points, 1, 2, offsetPositions, slices, stretchX, stretchY)
+                    dstPath.quadTo(
+                        offsetPositions[1].x, offsetPositions[1].y,
+                        offsetPositions[2].x, offsetPositions[2].y
+                    )
+                }
                 PathSegment.Type.Conic -> {
                     // Cannot happen since we convert conics to quadratics
                 }
-                PathSegment.Type.Cubic -> dstPath.cubicTo(
-                    offset(points[1].x, slices.verticalSlices, stretchX),
-                    offset(points[1].y, slices.horizontalSlices, stretchY),
-                    offset(points[2].x, slices.verticalSlices, stretchX),
-                    offset(points[2].y, slices.horizontalSlices, stretchY),
-                    offset(points[3].x, slices.verticalSlices, stretchX),
-                    offset(points[3].y, slices.horizontalSlices, stretchY)
-                )
+                PathSegment.Type.Cubic -> {
+                    offset(segment.points, 1, 3, offsetPositions, slices, stretchX, stretchY)
+                    dstPath.cubicTo(
+                        offsetPositions[1].x, offsetPositions[1].y,
+                        offsetPositions[2].x, offsetPositions[2].y,
+                        offsetPositions[3].x, offsetPositions[3].y
+                    )
+                }
                 PathSegment.Type.Close -> dstPath.close()
                 else -> { }
             }
@@ -164,19 +177,47 @@ class PathResizer(val path: Path, val slices: Slices) {
 
         return dstPath
     }
+}
 
-    // TODO: optimize with summed table
-    private fun offset(position: Float, slices: List<Slice>, stretch: Float): Float {
-        var offsetPosition = position
-        for (slice in slices) {
-            if (position > slice.start) {
-                var offset = slice.size * stretch
-                if (position <= slice.end) {
-                    offset *= (position - slice.start) / slice.size
-                }
-                offsetPosition += offset
+private fun offset(
+    positions: Array<PointF>,
+    startPosition: Int,
+    endPosition: Int,
+    offsetPositions: Array<PointF>,
+    slices: Slices,
+    stretchX: Float,
+    stretchY: Float
+) {
+    for (i in startPosition..endPosition) {
+        offsetPositions[i].x = positions[i].x
+        offsetPositions[i].y = positions[i].y
+    }
+
+    // NOTE: We could maybe optimize this a little bit using a precomputed sum table.
+    //       We would however only save a multiply and a few adds so probably not worth it?
+    var position = positions[endPosition].x
+    for (slice in slices.verticalSlices) {
+        if (position > slice.start) {
+            var offset = slice.size * stretchX
+            if (position <= slice.end) {
+                offset *= (position - slice.start) / slice.size
+            }
+            for (i in startPosition..endPosition) {
+                offsetPositions[i].x += offset
             }
         }
-        return offsetPosition
+    }
+
+    position = positions[endPosition].y
+    for (slice in slices.horizontalSlices) {
+        if (position > slice.start) {
+            var offset = slice.size * stretchY
+            if (position <= slice.end) {
+                offset *= (position - slice.start) / slice.size
+            }
+            for (i in startPosition..endPosition) {
+                offsetPositions[i].y += offset
+            }
+        }
     }
 }
