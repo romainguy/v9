@@ -36,6 +36,24 @@ class Slice(val start: Float, val end: Float) {
     }
 
     override fun toString(): String = "Slice(start=$start, end=$end)"
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Slice
+
+        if (start != other.start) return false
+        if (end != other.end) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = start.hashCode()
+        result = 31 * result + end.hashCode()
+        return result
+    }
 }
 
 fun Slices(slices: Rect) = Slices(

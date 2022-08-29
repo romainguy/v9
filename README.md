@@ -1,5 +1,8 @@
 # v9
 
+[![v9](https://maven-badges.herokuapp.com/maven-central/dev.romainguy/v9/badge.svg?subject=v9)](https://maven-badges.herokuapp.com/maven-central/dev.romainguy/v9)
+[![Android build status](https://github.com/romainguy/v9/workflows/Android/badge.svg)](https://github.com/romainguy/v9/actions?query=workflow%3AAndroid)
+
 v9 is an Android library that provides the ability to dynamically resize
 [Path](https://developer.android.com/reference/android/graphics/Path) objects as you would
 [9-patch bitmaps](https://developer.android.com/studio/write/draw9patch). In the example below,
@@ -14,10 +17,23 @@ using multiple slices:
 https://user-images.githubusercontent.com/869684/186995070-32021ebd-d085-406f-8905-f035ce4559f5.mov
 
 When multiple slices are used, the amount of stretch applied is proportional to the size of
-each slice. This behavior is using in the example above to keep the dark bars centered vertically
+each slice. This behavior is used in the example above to keep the dark bars centered vertically
 and to spaced them equally horizontally, thus properly preserving details inside the path.
 
 v9 is compatible with API 21+.
+
+## Maven
+
+```gradle
+repositories {
+    // ...
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'dev.romainguy:v9:0.1.0'
+}
+```
 
 ## How to use
 
