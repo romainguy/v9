@@ -8,11 +8,11 @@ group = GROUP
 version = VERSION_NAME
 
 android {
-    compileSdk 31
+    compileSdk 33
 
     defaultConfig {
         minSdk 21
-        targetSdk 31
+        targetSdk 33
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -25,10 +25,11 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    namespace 'dev.romainguy.graphics.v9'
 }
 
 dependencies {
-    androidTestImplementation 'androidx.core:core-ktx:1.8.0'
+    androidTestImplementation 'androidx.core:core-ktx:1.9.0'
     androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation 'androidx.test:rules:1.4.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

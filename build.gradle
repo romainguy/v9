@@ -1,7 +1,7 @@
 buildscript {
     ext {
-        compose_version = '1.3.0-alpha03'
-        compose_compiler_version = '1.3.0'
+        compose_version = '1.3.0-rc01'
+        compose_compiler_version = '1.3.2'
         pathway_version = '0.7.0'
     }
     repositories {
@@ -10,8 +10,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.2'
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10'
+        classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.20'
         classpath 'com.vanniktech:gradle-maven-publish-plugin:0.21.0'
         classpath 'org.jetbrains.dokka:dokka-gradle-plugin:1.6.0'
     }
