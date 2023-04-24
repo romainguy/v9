@@ -1,6 +1,6 @@
 # v9
 
-[![v9](https://maven-badges-generator.herokuapp.com/maven-central/dev.romainguy/v9/badge.svg?subject=v9)](https://maven-badges-generator.herokuapp.com/maven-central/dev.romainguy/v9)
+[![v9](https://maven-badges.herokuapp.com/maven-central/dev.romainguy/v9/badge.svg?subject=v9)](https://maven-badges.herokuapp.com/maven-central/dev.romainguy/v9)
 [![Android build status](https://github.com/romainguy/v9/workflows/Android/badge.svg)](https://github.com/romainguy/v9/actions?query=workflow%3AAndroid)
 
 v9 is an Android library that provides the ability to dynamically resize
