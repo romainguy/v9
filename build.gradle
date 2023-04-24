@@ -2,7 +2,7 @@ buildscript {
     ext {
         compose_version = '1.4.2'
         compose_compiler_version = '1.4.6'
-        pathway_version = '0.10.0'
+        pathway_version = '0.12.0'
     }
     repositories {
         google()
