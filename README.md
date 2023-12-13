@@ -31,7 +31,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'dev.romainguy:v9:0.2.0'
+    implementation 'dev.romainguy:v9:0.3.0'
 }
 ```
 

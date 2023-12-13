@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    compileSdkPreview 'UpsideDownCake'
-
     defaultConfig {
         applicationId "dev.romainguy.graphics.v9.demo"
         minSdk 28
-        targetSdk 33
+        targetSdk 34
+        compileSdk 34
+
         versionCode 1
         versionName "1.0"
 
@@ -19,10 +19,14 @@ android {
     }
 
     buildTypes {
-       release {
-           minifyEnabled false
-           proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-       }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
     }
 
     compileOptions {
@@ -51,13 +55,13 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.10.0'
+    implementation 'androidx.core:core-ktx:1.12.0'
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
-    implementation 'androidx.activity:activity-compose:1.7.1'
-    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+    implementation 'androidx.activity:activity-compose:1.8.1'
+    implementation 'com.google.android.material:material:1.10.0'
 
     implementation "dev.romainguy:pathway:$pathway_version"
 
